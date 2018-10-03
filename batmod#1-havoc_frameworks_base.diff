@@ -1,0 +1,97 @@
+diff --git a/core/java/android/os/BatteryManager.java b/core/java/android/os/BatteryManager.java
+index 2da42b404bd..d806374b1e3 100644
+--- a/core/java/android/os/BatteryManager.java
++++ b/core/java/android/os/BatteryManager.java
+@@ -142,6 +142,11 @@ public class BatteryManager {
+      */
+     public static final String EXTRA_TURBO_POWER = "turbo_power";
+ 
++    public static final String EXTRA_MOD_LEVEL = "mod_level";
++    public static final String EXTRA_MOD_STATUS = "mod_status";
++    public static final String EXTRA_MOD_TYPE = "mod_type";
++    public static final String EXTRA_MOD_FLAG = "mod_flag";
++
+     // values for "status" field in the ACTION_BATTERY_CHANGED Intent
+     public static final int BATTERY_STATUS_UNKNOWN = Constants.BATTERY_STATUS_UNKNOWN;
+     public static final int BATTERY_STATUS_CHARGING = Constants.BATTERY_STATUS_CHARGING;
+diff --git a/core/java/android/os/BatteryProperties.java b/core/java/android/os/BatteryProperties.java
+index af328d0943e..8d7013b3bcc 100644
+--- a/core/java/android/os/BatteryProperties.java
++++ b/core/java/android/os/BatteryProperties.java
+@@ -34,6 +34,11 @@ public class BatteryProperties implements Parcelable {
+     public int batteryChargeCounter;
+     public String batteryTechnology;
+ 
++    public int modLevel;
++    public int modStatus;
++    public int modType;
++    public int modFlag;
++
+     public BatteryProperties() {
+     }
+ 
+@@ -52,6 +57,11 @@ public class BatteryProperties implements Parcelable {
+         batteryFullCharge = other.batteryFullCharge;
+         batteryChargeCounter = other.batteryChargeCounter;
+         batteryTechnology = other.batteryTechnology;
++
++        modLevel = other.modLevel;
++        modStatus = other.modStatus;
++        modType = other.modType;
++        modFlag = other.modFlag;
+     }
+ 
+     /*
+@@ -74,6 +84,11 @@ public class BatteryProperties implements Parcelable {
+         batteryFullCharge = p.readInt();
+         batteryChargeCounter = p.readInt();
+         batteryTechnology = p.readString();
++
++        modLevel = p.readInt();
++        modStatus = p.readInt();
++        modType = p.readInt();
++        modFlag = p.readInt();
+     }
+ 
+     public void writeToParcel(Parcel p, int flags) {
+@@ -91,6 +106,11 @@ public class BatteryProperties implements Parcelable {
+         p.writeInt(batteryFullCharge);
+         p.writeInt(batteryChargeCounter);
+         p.writeString(batteryTechnology);
++
++        p.writeInt(modLevel);
++        p.writeInt(modStatus);
++        p.writeInt(modType);
++        p.writeInt(modFlag);
+     }
+ 
+     public static final Parcelable.Creator<BatteryProperties> CREATOR
+diff --git a/services/core/java/com/android/server/BatteryService.java b/services/core/java/com/android/server/BatteryService.java
+index d55d29dc5a4..c0ce30e9961 100644
+--- a/services/core/java/com/android/server/BatteryService.java
++++ b/services/core/java/com/android/server/BatteryService.java
+@@ -596,6 +596,11 @@ public final class BatteryService extends SystemService {
+         intent.putExtra(BatteryManager.EXTRA_DASH_CHARGER, mDashCharger);
+         intent.putExtra(BatteryManager.EXTRA_TURBO_POWER, mTurboPower);
+ 
++        intent.putExtra(BatteryManager.EXTRA_MOD_LEVEL, mBatteryProps.modLevel);
++        intent.putExtra(BatteryManager.EXTRA_MOD_STATUS, mBatteryProps.modStatus);
++        intent.putExtra(BatteryManager.EXTRA_MOD_TYPE, mBatteryProps.modType);
++        intent.putExtra(BatteryManager.EXTRA_MOD_FLAG, mBatteryProps.modFlag);
++
+         if (DEBUG) {
+             Slog.d(TAG, "Sending ACTION_BATTERY_CHANGED.  level:" + mBatteryProps.batteryLevel +
+                     ", scale:" + BATTERY_SCALE + ", status:" + mBatteryProps.batteryStatus +
+@@ -612,7 +617,11 @@ public final class BatteryService extends SystemService {
+                     ", maxChargingVoltage:" + mBatteryProps.maxChargingVoltage +
+                     ", chargeCounter:" + mBatteryProps.batteryChargeCounter +
+                     ", dashCharger:" + mDashCharger +
+-                    ", turboPower:" + mTurboPower);
++                    ", turboPower:" + mTurboPower +
++                    ", mod_flag:" + mBatteryProps.modFlag +
++                    ", mod_level:" + mBatteryProps.modLevel +
++                    ", mod_status:" + mBatteryProps.modStatus +
++                    ", mod_type:" + mBatteryProps.modType );
+         }
+ 
+         mHandler.post(new Runnable() {

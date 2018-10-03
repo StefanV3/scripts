@@ -1,0 +1,116 @@
+From 6631c74b2805ff7ff5d06e842cda5b9c59a782fd Mon Sep 17 00:00:00 2001
+From: Erfan Abdi <erfangplus@gmail.com>
+Date: Thu, 12 Apr 2018 19:26:03 +0300
+Subject: [PATCH] drivers: motomods: Revert "remove audio mods support"
+
+This reverts commit 7f371ff3b89d0f796f7b83856aaa3e5d89be1a3c.
+
+Change-Id: Iefb38c909f19b587904ca9eec241b62c4abb03ca
+Signed-off-by: Erfan Abdi <erfangplus@gmail.com>
+---
+
+diff --git a/drivers/misc/motomods/greybus/Makefile b/drivers/misc/motomods/greybus/Makefile
+index b052b80..efb16d4 100644
+--- a/drivers/misc/motomods/greybus/Makefile
++++ b/drivers/misc/motomods/greybus/Makefile
+@@ -61,7 +61,7 @@
+ 
+ # gb-audio depends on MODS_CODEC_BUS
+ ifneq ($(filter m y, $(CONFIG_MODS_CODEC_BUS)),)
+-#obj-$(CONFIG_MOTOMODS) += gb-audio.o
++obj-$(CONFIG_MOTOMODS) += gb-audio.o
+ endif
+ 
+ #obj-$(CONFIG_MOTOMODS) += gb-vibrator.o
+diff --git a/drivers/misc/motomods/greybus/audio.c b/drivers/misc/motomods/greybus/audio.c
+index 629920f..b570384 100644
+--- a/drivers/misc/motomods/greybus/audio.c
++++ b/drivers/misc/motomods/greybus/audio.c
+@@ -419,6 +419,30 @@
+ 	.request_recv		= gb_mods_audio_event_recv,
+ };
+ 
++int register_mods_codec(bool register_mod) {
++
++    int err;
++
++    if (!register_mod)
++        return 0;
++
++    /* mods codec is registered with platform and will be used when
++    * pcm is routed through platform dependent I2S Intf
++    * instead of pcm tunneling.
++    */
++    err = gb_audio_register_mods_codec(&gb_audio_mods_driver);
++    if (err) {
++        pr_err("Can't register mods codec driver: %d\n", err);
++        goto err_unregister_mods_aud;
++    }
++
++    return 0;
++
++err_unregister_mods_aud:
++	gb_protocol_deregister(&gb_mods_audio_protocol);
++	return err;
++}
++
+ /*
+  * This is the basic hook get things initialized and registered w/ gb
+  */
+@@ -441,19 +465,10 @@
+ 		goto err_unregister_i2s_mgmt;
+ 	}
+ 
+-	/* mods codec is registered with platform and will be used when
+-	 * pcm is routed through platform dependent I2S Intf
+-	 * instead of pcm tunneling.
+-	*/
+-	err = gb_audio_register_mods_codec(&gb_audio_mods_driver);
+-	if (err) {
+-		pr_err("Can't register mods codec driver: %d\n", err);
+-		goto err_unregister_mods_aud;
+-	}
++	err = register_mods_codec(false);
++
+ 	return 0;
+ 
+-err_unregister_mods_aud:
+-	gb_protocol_deregister(&gb_mods_audio_protocol);
+ err_unregister_i2s_mgmt:
+ 	gb_protocol_deregister(&gb_i2s_mgmt_protocol);
+ 	return err;
+diff --git a/drivers/misc/motomods/greybus/audio.h b/drivers/misc/motomods/greybus/audio.h
+index 7907dca..2c3674e 100644
+--- a/drivers/misc/motomods/greybus/audio.h
++++ b/drivers/misc/motomods/greybus/audio.h
+@@ -123,6 +123,9 @@
+ int gb_mods_aud_get_mic_params(
+ 		struct gb_audio_get_mic_params_response *get_params,
+ 		struct gb_connection *connection);
++
++int register_mods_codec(bool register_mod);
++
+ /*
+  * Platform drivers
+  */
+diff --git a/sound/soc/codecs/mods_codec_shim.c b/sound/soc/codecs/mods_codec_shim.c
+index 2d1aef1..e46c145 100644
+--- a/sound/soc/codecs/mods_codec_shim.c
++++ b/sound/soc/codecs/mods_codec_shim.c
+@@ -23,6 +23,7 @@
+ #include <sound/initval.h>
+ #include <sound/tlv.h>
+ #include <linux/mods_codec_dev.h>
++#include "../../../drivers/misc/motomods/greybus/audio.h"
+ 
+ #define MODS_RATES (SNDRV_PCM_RATE_5512 | SNDRV_PCM_RATE_8000 |\
+ 		SNDRV_PCM_RATE_11025 | SNDRV_PCM_RATE_16000 |\
+@@ -212,6 +213,8 @@
+ 
+ 	pr_info("mods codec shim probed\n");
+ 
++	register_mods_codec(true);
++
+ 	return 0;
+ }
+

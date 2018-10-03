@@ -1,0 +1,55 @@
+diff --git a/services/batteryservice/BatteryProperties.cpp b/services/batteryservice/BatteryProperties.cpp
+index 8fa111d19..a70804fd4 100644
+--- a/services/batteryservice/BatteryProperties.cpp
++++ b/services/batteryservice/BatteryProperties.cpp
+@@ -44,6 +44,12 @@ status_t BatteryProperties::readFromParcel(Parcel* p) {
+     batteryFullCharge = p->readInt32();
+     batteryChargeCounter = p->readInt32();
+     batteryTechnology = String8((p->readString16()).string());
++
++    modLevel = p->readInt32();
++    modStatus = p->readInt32();
++    modType = p->readInt32();
++    modFlag = p->readInt32();
++
+     return OK;
+ }
+ 
+@@ -62,6 +68,12 @@ status_t BatteryProperties::writeToParcel(Parcel* p) const {
+     p->writeInt32(batteryFullCharge);
+     p->writeInt32(batteryChargeCounter);
+     p->writeString16(String16(batteryTechnology));
++
++    p->writeInt32(modLevel);
++    p->writeInt32(modStatus);
++    p->writeInt32(modType);
++    p->writeInt32(modFlag);
++
+     return OK;
+ }
+ 
+diff --git a/services/batteryservice/include/batteryservice/BatteryService.h b/services/batteryservice/include/batteryservice/BatteryService.h
+index 80ab7f3e9..ee3f63693 100644
+--- a/services/batteryservice/include/batteryservice/BatteryService.h
++++ b/services/batteryservice/include/batteryservice/BatteryService.h
+@@ -35,6 +35,8 @@ enum {
+     BATTERY_PROP_CAPACITY = 4, // equals BATTERY_PROPERTY_CAPACITY
+     BATTERY_PROP_ENERGY_COUNTER = 5, // equals BATTERY_PROPERTY_ENERGY_COUNTER
+     BATTERY_PROP_BATTERY_STATUS = 6, // equals BATTERY_PROPERTY_BATTERY_STATUS
++    BATTERY_PROP_CHARGE_FULL = 7,
++    BATTERY_PROP_MOD_CHARGE_FULL = 8,
+ };
+ 
+ struct BatteryProperties {
+@@ -55,6 +57,11 @@ struct BatteryProperties {
+     int batteryChargeCounter;
+     String8 batteryTechnology;
+ 
++    int modLevel;
++    int modStatus;
++    int modType;
++    int modFlag;
++
+     status_t writeToParcel(Parcel* parcel) const;
+     status_t readFromParcel(Parcel* parcel);
+ };
